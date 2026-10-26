@@ -1,0 +1,1 @@
+# negocio app package init
