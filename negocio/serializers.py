@@ -67,6 +67,7 @@ class VentaSerializer(serializers.ModelSerializer):
     class Meta:
         model = Venta
         fields = '__all__'
+        read_only_fields = ['usuario_vendedor']
 
 class VentaDetalleSerializer(serializers.ModelSerializer):
     cliente = ClienteSerializer(read_only=True)

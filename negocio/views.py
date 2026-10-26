@@ -52,16 +52,14 @@ class ProductoViewSet(viewsets.ModelViewSet):
     ordering_fields = ['precio', 'stock', 'nombre']
 
     def get_serializer_class(self):
-        # Si es GET usamos el Detalle (anidado), si es POST usamos el normal
-        if self.action in ['list', 'retrieve']:
+        # Muestra datos anidados exclusivamente al consultar list (get all)
+        if self.action == 'list':
             return ProductoDetalleSerializer
         return ProductoSerializer
 
     @action(detail=True, methods=['post'], url_path='actualizar-stock')
     def actualizar_stock(self, request, pk=None):
         producto = self.get_object()
-        
-        # Leemos los datos enviados en el JSON igual que en el ciber
         cantidad = int(request.data.get('cantidad', 0))
         operacion = request.data.get('operacion', 'sumar')
 
@@ -86,19 +84,19 @@ class VentaViewSet(viewsets.ModelViewSet):
     ordering_fields = ['fecha', 'total']
 
     def get_serializer_class(self):
-        if self.action in ['list', 'retrieve', 'ventas_del_dia']:
+        # Muestra datos anidados exclusivamente al consultar list (get all)
+        if self.action == 'list':
             return VentaDetalleSerializer
         return VentaSerializer
 
     def perform_create(self, serializer):
-        # Al crear la venta, forzamos que el vendedor sea el usuario logueado
         serializer.save(usuario_vendedor=self.request.user)
 
     @action(detail=False, methods=['get'], url_path='ventas-del-dia')
     def ventas_del_dia(self, request):
         hoy = timezone.now().date()
         ventas = self.get_queryset().filter(fecha__date=hoy)
-        serializer = self.get_serializer(ventas, many=True)
+        serializer = VentaDetalleSerializer(ventas, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['post'], url_path='finalizar-venta')
@@ -114,15 +112,11 @@ class DetalleVentaViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     def perform_create(self, serializer):
-        # 1. Guardamos el detalle
         detalle = serializer.save()
-        
-        # 2. Descontamos el stock automáticamente
         producto = detalle.producto
         producto.stock -= detalle.cantidad
         producto.save()
 
-        # 3. Sumamos el valor al total de la Venta general
         venta = detalle.venta
         venta.total += detalle.subtotal
         venta.save()
@@ -135,7 +129,8 @@ class CompraViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_serializer_class(self):
-        if self.action in ['list', 'retrieve']:
+        # Muestra datos anidados exclusivamente al consultar list (get all)
+        if self.action == 'list':
             return CompraDetalleSerializer
         return CompraSerializer
 
@@ -146,13 +141,10 @@ class DetalleCompraViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         detalle = serializer.save()
-        
-        # Aumentamos el stock
         producto = detalle.producto
         producto.stock += detalle.cantidad
         producto.save()
 
-        # Sumamos al total de la compra
         compra = detalle.compra
         compra.total += detalle.subtotal
         compra.save()
