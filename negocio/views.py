@@ -5,6 +5,8 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter, OrderingFilter
+from django_filters import rest_framework as filters
+
 
 from .models import (
     Cliente, Categoria, Marca, Producto, 
@@ -18,7 +20,14 @@ from .serializers import (
 )
 
 def home_view(request):
-    return render(request, 'index.html', {})
+    context = {
+        'total_productos': Producto.objects.count(),
+        'total_ventas': Venta.objects.count(),
+        'total_clientes': Cliente.objects.count(),
+        'total_proveedores': Proveedor.objects.count(),
+        'hora_actual': timezone.now(),
+    }
+    return render(request, 'index.html', context)
 
 class ClienteViewSet(viewsets.ModelViewSet):
     queryset = Cliente.objects.all()
@@ -28,12 +37,14 @@ class ClienteViewSet(viewsets.ModelViewSet):
 class CategoriaViewSet(viewsets.ModelViewSet):
     queryset = Categoria.objects.all()
     serializer_class = CategoriaSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    # Permite lectura pública, exige token para crear/editar/borrar
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
 class MarcaViewSet(viewsets.ModelViewSet):
     queryset = Marca.objects.all()
     serializer_class = MarcaSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    # Permite lectura pública, exige token para crear/editar/borrar
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
 class ProveedorViewSet(viewsets.ModelViewSet):
     queryset = Proveedor.objects.all()
@@ -43,13 +54,25 @@ class ProveedorViewSet(viewsets.ModelViewSet):
 # ==========================================
 # PRODUCTOS CON RUTINA DE STOCK
 # ==========================================
+
+
+class ProductoFilter(filters.FilterSet):
+    # Cambiamos iexact por icontains para que sea más flexible
+    categoria = filters.CharFilter(field_name='categoria__nombre', lookup_expr='icontains')
+    marca = filters.CharFilter(field_name='marca__nombre', lookup_expr='icontains')
+
+    class Meta:
+        model = Producto
+        fields = ['categoria', 'marca']
+
 class ProductoViewSet(viewsets.ModelViewSet):
     queryset = Producto.objects.all()
-    permission_classes = [permissions.IsAuthenticated]
+    # Permite que el catálogo de Next.js haga GET sin token
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
-    filterset_fields = ['categoria', 'marca']
     search_fields = ['nombre', 'descripcion']
     ordering_fields = ['precio', 'stock', 'nombre']
+    filterset_class = ProductoFilter
 
     def get_serializer_class(self):
         # Muestra datos anidados exclusivamente al consultar list (get all)

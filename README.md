@@ -213,8 +213,10 @@ El servidor quedará disponible en: `http://127.0.0.1:8000/`
 
 | Usuario | Contraseña | Rol | Acceso |
 | :--- | :--- | :--- | :--- |
-| **admin** | `admin123` | Administrador | Django Admin & API completa |
+| **admin** | `admin12345` | Administrador | Django Admin & API completa |
 | **vendedor** | `vendedor123` | Vendedor | API comercial y ventas |
+| **vendedora_sofia** | `sofia123` | Vendedor | API comercial y ventas |
+| **deposito_marcos** | `deposito123` | Depósito | Control de stock y almacén |
 
 ---
 
@@ -238,8 +240,6 @@ El servidor quedará disponible en: `http://127.0.0.1:8000/`
 ---
 
 ## 📸 Capturas del Proyecto en Funcionamiento
-
-> *Aquí puedes adjuntar las capturas de pantalla tomadas del proyecto en ejecución para la entrega final.*
 
 ### 1. Template de Bienvenida (`/`)
 ![Landing Page](docs/screenshots/landing.png)

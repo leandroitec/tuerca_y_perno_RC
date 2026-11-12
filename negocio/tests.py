@@ -252,6 +252,6 @@ class TuercaYPernoRCAPITests(TestCase):
     def test_unauthenticated_request_rejected(self):
         """Peticiones sin token a endpoints protegidos deben recibir 401 Unauthorized"""
         unauthenticated_client = APIClient()
-        url = reverse('producto-list')
+        url = reverse('venta-list')
         response = unauthenticated_client.get(url)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
