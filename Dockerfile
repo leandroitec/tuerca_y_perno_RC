@@ -26,5 +26,5 @@ COPY . .
 # Exponer puerto 8000
 EXPOSE 8000
 
-# Ejecutar migraciones e iniciar el servidor
-CMD ["sh", "-c", "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"]
+# Ejecutar migraciones, cargar datos de prueba e iniciar el servidor
+CMD ["sh", "-c", "python manage.py migrate && python manage.py poblar_datos && python manage.py runserver 0.0.0.0:${PORT:-8000}"]
