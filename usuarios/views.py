@@ -5,6 +5,7 @@ from rest_framework.exceptions import AuthenticationFailed
 
 from .models import UsuarioPersonalizado
 from .serializers import UsuarioSerializer
+from negocio.permissions import roles_permitidos
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):
@@ -49,4 +50,5 @@ class CustomTokenObtainPairView(TokenObtainPairView):
 class UsuarioViewSet(viewsets.ModelViewSet):
     queryset = UsuarioPersonalizado.objects.all()
     serializer_class = UsuarioSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    # La gestión de usuarios es solo para administradores
+    permission_classes = [roles_permitidos('ADMIN')]

@@ -44,6 +44,14 @@ class TuercaYPernoRCAPITests(TestCase):
         self.token = response.data['access']
         self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.token}')
 
+        # Usuarios de los otros roles para probar los permisos
+        self.user_deposito = Usuario.objects.create_user(
+            username="deposito1", password=self.password, rol="DEPOSITO"
+        )
+        self.user_admin = Usuario.objects.create_user(
+            username="admin1", password=self.password, rol="ADMIN"
+        )
+
         # 3. Crear datos base (Categoría, Marca, Proveedor, Cliente)
         self.categoria_herramientas = Categoria.objects.create(
             nombre="Herramientas Manuales",
@@ -81,6 +89,16 @@ class TuercaYPernoRCAPITests(TestCase):
             categoria=self.categoria_herramientas,
             marca=self.marca_stanley
         )
+
+    def cliente_con_rol(self, user):
+        """Devuelve un APIClient autenticado con el token JWT del usuario dado."""
+        client = APIClient()
+        res = client.post(
+            reverse('token_obtain_pair'),
+            {'username': user.username, 'password': self.password},
+        )
+        client.credentials(HTTP_AUTHORIZATION=f"Bearer {res.data['access']}")
+        return client
 
     # -------------------------------------------------------------
     # PRUEBA DE LANDING PAGE TRADICIONAL
@@ -132,7 +150,8 @@ class TuercaYPernoRCAPITests(TestCase):
             "categoria": self.categoria_tornilleria.id,
             "marca": self.marca_stanley.id,
         }
-        response = self.client.post(url, payload, format='json')
+        # Crear productos es tarea de DEPOSITO (o ADMIN)
+        response = self.cliente_con_rol(self.user_deposito).post(url, payload, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.data['nombre'], "Tornillo Hexagonal 3/8 x 2")
         self.assertEqual(response.data['categoria'], self.categoria_tornilleria.id)
@@ -168,16 +187,18 @@ class TuercaYPernoRCAPITests(TestCase):
     def test_actualizar_stock_action(self):
         """POST a /api/productos/{id}/actualizar-stock/ para sumar o restar existencias"""
         url = reverse('producto-actualizar-stock', kwargs={'pk': self.producto_llave.id})
+        # Manejar stock es tarea de DEPOSITO (o ADMIN)
+        deposito = self.cliente_con_rol(self.user_deposito)
 
         # 1. Sumar 20 unidades
-        response_sumar = self.client.post(url, {'cantidad': 20, 'operacion': 'sumar'})
+        response_sumar = deposito.post(url, {'cantidad': 20, 'operacion': 'sumar'})
         self.assertEqual(response_sumar.status_code, status.HTTP_200_OK)
         self.producto_llave.refresh_from_db()
         self.assertEqual(self.producto_llave.stock, 70)
         self.assertIn("70", response_sumar.data['mensaje'])
 
         # 2. Restar 15 unidades
-        response_restar = self.client.post(url, {'cantidad': 15, 'operacion': 'restar'})
+        response_restar = deposito.post(url, {'cantidad': 15, 'operacion': 'restar'})
         self.assertEqual(response_restar.status_code, status.HTTP_200_OK)
         self.producto_llave.refresh_from_db()
         self.assertEqual(self.producto_llave.stock, 55)
@@ -255,3 +276,49 @@ class TuercaYPernoRCAPITests(TestCase):
         url = reverse('venta-list')
         response = unauthenticated_client.get(url)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+
+    # -------------------------------------------------------------
+    # PRUEBAS DE PERMISOS POR ROL
+    # -------------------------------------------------------------
+    def test_vendedor_no_puede_modificar_productos(self):
+        """VENDEDOR puede ver productos pero no crearlos, editarlos ni borrarlos"""
+        url_lista = reverse('producto-list')
+        url_detalle = reverse('producto-detail', kwargs={'pk': self.producto_llave.id})
+
+        self.assertEqual(self.client.get(url_lista).status_code, status.HTTP_200_OK)
+        res = self.client.post(url_lista, {
+            "nombre": "No permitido", "precio": "1.00", "stock": 1,
+            "categoria": self.categoria_herramientas.id, "marca": self.marca_bosch.id,
+        }, format='json')
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(self.client.delete(url_detalle).status_code, status.HTTP_403_FORBIDDEN)
+        self.assertTrue(Producto.objects.filter(id=self.producto_llave.id).exists())
+
+    def test_deposito_no_puede_ver_ventas_ni_clientes(self):
+        """DEPOSITO no accede a ventas ni a clientes"""
+        deposito = self.cliente_con_rol(self.user_deposito)
+        self.assertEqual(deposito.get(reverse('venta-list')).status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(deposito.get(reverse('cliente-list')).status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_vendedor_no_puede_ver_compras_ni_proveedores(self):
+        """VENDEDOR no accede a compras ni a proveedores"""
+        self.assertEqual(self.client.get(reverse('compra-list')).status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(self.client.get(reverse('proveedor-list')).status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_gestion_de_usuarios_solo_admin(self):
+        """Solo ADMIN puede listar usuarios en /api/gestion/"""
+        url = '/api/gestion/'
+        self.assertEqual(self.client.get(url).status_code, status.HTTP_403_FORBIDDEN)
+        deposito = self.cliente_con_rol(self.user_deposito)
+        self.assertEqual(deposito.get(url).status_code, status.HTTP_403_FORBIDDEN)
+        admin = self.cliente_con_rol(self.user_admin)
+        self.assertEqual(admin.get(url).status_code, status.HTTP_200_OK)
+
+    def test_catalogo_publico_sin_token(self):
+        """Productos, categorías y marcas se leen sin token, pero no se escriben"""
+        anonimo = APIClient()
+        for nombre in ('producto-list', 'categoria-list', 'marca-list'):
+            self.assertEqual(anonimo.get(reverse(nombre)).status_code, status.HTTP_200_OK)
+        res = anonimo.post(reverse('marca-list'), {"nombre": "X"}, format='json')
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)

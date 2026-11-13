@@ -7,6 +7,13 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter, OrderingFilter
 from django_filters import rest_framework as filters
 
+from .permissions import roles_permitidos
+
+# Permisos por rol (deben coincidir con los del front, src/lib/admin-navigation.ts)
+SOLO_VENTAS = roles_permitidos('ADMIN', 'VENDEDOR')
+SOLO_DEPOSITO = roles_permitidos('ADMIN', 'DEPOSITO')
+CATALOGO = roles_permitidos('ADMIN', 'DEPOSITO', lectura_publica=True)
+
 
 from .models import (
     Cliente, Categoria, Marca, Producto, 
@@ -32,24 +39,24 @@ def home_view(request):
 class ClienteViewSet(viewsets.ModelViewSet):
     queryset = Cliente.objects.all()
     serializer_class = ClienteSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [SOLO_VENTAS]
 
 class CategoriaViewSet(viewsets.ModelViewSet):
     queryset = Categoria.objects.all()
     serializer_class = CategoriaSerializer
-    # Permite lectura pública, exige token para crear/editar/borrar
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    # Lectura pública; crear/editar/borrar solo ADMIN y DEPOSITO
+    permission_classes = [CATALOGO]
 
 class MarcaViewSet(viewsets.ModelViewSet):
     queryset = Marca.objects.all()
     serializer_class = MarcaSerializer
-    # Permite lectura pública, exige token para crear/editar/borrar
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    # Lectura pública; crear/editar/borrar solo ADMIN y DEPOSITO
+    permission_classes = [CATALOGO]
 
 class ProveedorViewSet(viewsets.ModelViewSet):
     queryset = Proveedor.objects.all()
     serializer_class = ProveedorSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [SOLO_DEPOSITO]
 
 # ==========================================
 # PRODUCTOS CON RUTINA DE STOCK
@@ -67,8 +74,8 @@ class ProductoFilter(filters.FilterSet):
 
 class ProductoViewSet(viewsets.ModelViewSet):
     queryset = Producto.objects.all()
-    # Permite que el catálogo de Next.js haga GET sin token
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    # El catálogo de Next.js hace GET sin token; escribir solo ADMIN y DEPOSITO
+    permission_classes = [CATALOGO]
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     search_fields = ['nombre', 'descripcion']
     ordering_fields = ['precio', 'stock', 'nombre']
@@ -101,7 +108,7 @@ class ProductoViewSet(viewsets.ModelViewSet):
 # ==========================================
 class VentaViewSet(viewsets.ModelViewSet):
     queryset = Venta.objects.all()
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [SOLO_VENTAS]
     filter_backends = [DjangoFilterBackend, OrderingFilter]
     filterset_fields = ['cliente', 'estado']
     ordering_fields = ['fecha', 'total']
@@ -132,7 +139,7 @@ class VentaViewSet(viewsets.ModelViewSet):
 class DetalleVentaViewSet(viewsets.ModelViewSet):
     queryset = DetalleVenta.objects.all()
     serializer_class = DetalleVentaSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [SOLO_VENTAS]
 
     def perform_create(self, serializer):
         detalle = serializer.save()
@@ -149,7 +156,7 @@ class DetalleVentaViewSet(viewsets.ModelViewSet):
 # ==========================================
 class CompraViewSet(viewsets.ModelViewSet):
     queryset = Compra.objects.all()
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [SOLO_DEPOSITO]
 
     def get_serializer_class(self):
         # Muestra datos anidados exclusivamente al consultar list (get all)
@@ -160,7 +167,7 @@ class CompraViewSet(viewsets.ModelViewSet):
 class DetalleCompraViewSet(viewsets.ModelViewSet):
     queryset = DetalleCompra.objects.all()
     serializer_class = DetalleCompraSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [SOLO_DEPOSITO]
 
     def perform_create(self, serializer):
         detalle = serializer.save()
