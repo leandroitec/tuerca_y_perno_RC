@@ -18,7 +18,7 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
 
 # Copiar archivos de dependencias e instalarlas en el entorno de Python
 COPY pyproject.toml README.md ./
-RUN uv pip install --system -r <(uv pip compile pyproject.toml) || uv pip install --system -e .
+RUN uv pip compile pyproject.toml -o requirements.txt && uv pip install --system -r requirements.txt
 
 # Copiar el resto del código
 COPY . .
