@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tuerca y Perno RC - Sistema de Gestión</title>
+    <style>
+        :root {
+            --primary: #d97706; /* Ambar industrial ferretero */
+            --primary-dark: #b45309;
+            --slate-900: #0f172a;
+            --slate-800: #1e293b;
+            --slate-700: #334155;
+            --slate-200: #e2e8f0;
+            --slate-100: #f1f5f9;
+            --emerald: #10b981;
+            --blue: #3b82f6;
+            --purple: #8b5cf6;
+        }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: var(--slate-100);
+            color: var(--slate-800);
+            line-height: 1.6;
+        }
+        header {
+            background: linear-gradient(135deg, var(--slate-900) 0%, var(--slate-800) 100%);
+            color: white;
+            padding: 2.5rem 1.5rem;
+            border-bottom: 4px solid var(--primary);
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+        }
+        .header-content {
+            max-width: 1100px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1.5rem;
+        }
+        .brand h1 {
+            font-size: 2rem;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .brand h1 span {
+            color: var(--primary);
+        }
+        .brand p {
+            color: #94a3b8;
+            font-size: 0.95rem;
+            margin-top: 0.25rem;
+        }
+        .badge {
+            background-color: var(--slate-700);
+            color: #f8fafc;
+            padding: 0.4rem 0.8rem;
+            border-radius: 9999px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        .badge-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: var(--emerald);
+        }
+        main {
+            max-width: 1100px;
+            margin: 2rem auto;
+            padding: 0 1.5rem;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1.25rem;
+            margin-bottom: 2.5rem;
+        }
+        .stat-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+            border-left: 4px solid var(--primary);
+            transition: transform 0.2s;
+        }
+        .stat-card:hover {
+            transform: translateY(-2px);
+        }
+        .stat-card.ventas { border-left-color: var(--emerald); }
+        .stat-card.clientes { border-left-color: var(--blue); }
+        .stat-card.proveedores { border-left-color: var(--purple); }
+        .stat-title {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #64748b;
+            font-weight: 700;
+        }
+        .stat-value {
+            font-size: 2.25rem;
+            font-weight: 800;
+            color: var(--slate-900);
+            margin-top: 0.25rem;
+        }
+        .section-title {
+            font-size: 1.35rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: var(--slate-900);
+        }
+        .links-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2.5rem;
+        }
+        .link-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .link-card h3 {
+            font-size: 1.15rem;
+            color: var(--slate-900);
+            margin-bottom: 0.5rem;
+        }
+        .link-card p {
+            font-size: 0.9rem;
+            color: #64748b;
+            margin-bottom: 1.25rem;
+        }
+        .btn {
+            display: inline-block;
+            text-decoration: none;
+            background-color: var(--primary);
+            color: white;
+            font-weight: 600;
+            padding: 0.6rem 1.2rem;
+            border-radius: 8px;
+            text-align: center;
+            transition: background-color 0.2s;
+            font-size: 0.9rem;
+        }
+        .btn:hover {
+            background-color: var(--primary-dark);
+        }
+        .btn-outline {
+            background-color: transparent;
+            color: var(--slate-700);
+            border: 1px solid var(--slate-200);
+        }
+        .btn-outline:hover {
+            background-color: var(--slate-100);
+            color: var(--slate-900);
+        }
+        .code-box {
+            background: var(--slate-900);
+            color: #f8fafc;
+            padding: 1.25rem;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 0.85rem;
+            overflow-x: auto;
+            margin-top: 0.75rem;
+        }
+        footer {
+            text-align: center;
+            padding: 2rem;
+            color: #94a3b8;
+            font-size: 0.85rem;
+            border-top: 1px solid var(--slate-200);
+            margin-top: 3rem;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <div class="brand">
+                <h1>🔩 Tuerca y Perno <span>RC</span></h1>
+                <p>Sistema de Gestión Comercial y Depósito para Ferretería y Corralón</p>
+            </div>
+            <div class="badge">
+                <span class="badge-dot"></span> API REST Operativa (Django 5)
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <!-- Métricas Rápidas del Negocio -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-title">Productos en Catálogo</div>
+                <div class="stat-value">{{ total_productos }}</div>
+            </div>
+            <div class="stat-card ventas">
+                <div class="stat-title">Ventas Registradas</div>
+                <div class="stat-value">{{ total_ventas }}</div>
+            </div>
+            <div class="stat-card clientes">
+                <div class="stat-title">Clientes Activos</div>
+                <div class="stat-value">{{ total_clientes }}</div>
+            </div>
+            <div class="stat-card proveedores">
+                <div class="stat-title">Proveedores de Corralón</div>
+                <div class="stat-value">{{ total_proveedores }}</div>
+            </div>
+        </div>
+
+        <!-- Accesos Directos a Documentación y Herramientas -->
+        <h2 class="section-title">Panel de Acceso y Documentación</h2>
+        <div class="links-grid">
+            <div class="link-card">
+                <div>
+                    <h3>📄 Swagger UI (Interactivo)</h3>
+                    <p>Explora, prueba y ejecuta endpoints directamente en el navegador con soporte para autenticación Bearer JWT.</p>
+                </div>
+                <a href="/api/docs/" class="btn">Abrir Swagger UI</a>
+            </div>
+
+            <div class="link-card">
+                <div>
+                    <h3>📑 ReDoc (Referencia Técnica)</h3>
+                    <p>Documentación técnica detallada de los 10 modelos y esquemas OpenAPI 3.0 generada con drf-spectacular.</p>
+                </div>
+                <a href="/api/redoc/" class="btn btn-outline">Abrir ReDoc</a>
+            </div>
+
+            <div class="link-card">
+                <div>
+                    <h3>⚙️ Panel de Administración</h3>
+                    <p>Gestiona usuarios, categorías, marcas, compras y ventas con filtros avanzados y edición en línea.</p>
+                </div>
+                <a href="/admin/" class="btn btn-outline">Ir a Django Admin</a>
+            </div>
+
+            <div class="link-card">
+                <div>
+                    <h3>🔌 API REST Root</h3>
+                    <p>Explora el enrutador principal con los 10 ViewSets disponibles en formato JSON o Browsable API.</p>
+                </div>
+                <a href="/api/" class="btn btn-outline">Explorar API Root</a>
+            </div>
+        </div>
+
+        <!-- Instrucciones de Autenticación -->
+        <h2 class="section-title">Autenticación con SimpleJWT</h2>
+        <p style="color: #64748b; font-size: 0.95rem;">
+            Los endpoints comerciales de ventas, compras e inventario están protegidos. Obtén tu token JWT y envíalo en la cabecera <code>Authorization</code>:
+        </p>
+
+        <div class="code-box">
+# 1. Obtener Token JWT:
+curl -X POST http://127.0.0.1:8000/api/auth/token/ \
+     -H "Content-Type: application/json" \
+     -d '{"username": "tu_usuario", "password": "tu_password"}'
+
+# 2. Consultar Productos con Token:
+curl -X GET http://127.0.0.1:8000/api/productos/ \
+     -H "Authorization: Bearer &lt;tu_access_token&gt;"
+
+# 3. Consultar Ventas del Día (@action personalizada):
+curl -X GET http://127.0.0.1:8000/api/ventas/ventas-del-dia/ \
+     -H "Authorization: Bearer &lt;tu_access_token&gt;"
+        </div>
+    </main>
+
+    <footer>
+        Tuerca y Perno RC &bull; Backend Django 5 &amp; Django REST Framework &bull; Python 3.12+ con uv
+    </footer>
+</body>
+</html>
